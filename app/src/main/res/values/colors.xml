@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="myPrimaryColor">#2196F3</color>
+    <color name="myStatusBarColor">#106F8E</color>
+    <color name="myAccentColor">#90CAF9</color>
+    <color name="slidingTabSelectedItemColor">#2ECCFA</color>
+
+    <!-- Chat activity -->
+
+    <color name="chatSenderColor">#000000</color>
+    <color name="chatTimestampColor">#000000</color>
+    <color name="chatTextColor">#000000</color>
+
+</resources>

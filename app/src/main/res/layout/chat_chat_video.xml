@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VideoView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="300dp"
+    android:layout_height="300dp"
+    android:layout_gravity="center"
+    android:id="@+id/chat_video"
+    android:clickable="true"/>

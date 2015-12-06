@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:paddingLeft="@dimen/chat_sender_padding"
+        android:paddingStart="@dimen/chat_sender_padding"
+        android:paddingRight="@dimen/chat_sender_padding"
+        android:paddingEnd="@dimen/chat_sender_padding"
+        android:gravity="start|top"
+        android:id="@+id/chat_sender"
+        android:text=""
+        android:textSize="17sp"
+        android:textColor="@color/chatSenderColor"
+        android:textIsSelectable="false"
+        android:textStyle="bold"
+        android:clickable="false"
+        android:lines="1"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:padding="@dimen/chat_body_padding">
+
+        <include layout="@layout/chat_chat_text"
+            android:id="@+id/chat_text_layout"/>
+
+        <include layout="@layout/chat_chat_image"
+            android:id="@+id/chat_image_layout"/>
+
+        <include layout="@layout/chat_chat_audio"
+            android:id="@+id/chat_audio_layout"/>
+
+        <include layout="@layout/chat_chat_video"
+            android:id="@+id/chat_video_layout"/>
+
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:paddingLeft="@dimen/chat_timestamp_padding"
+        android:paddingStart="@dimen/chat_timestamp_padding"
+        android:paddingRight="@dimen/chat_timestamp_padding"
+        android:paddingEnd="@dimen/chat_timestamp_padding"
+        android:gravity="end|bottom"
+        android:id="@+id/chat_timestamp"
+        android:text=""
+        android:textSize="17sp"
+        android:textColor="@color/chatTimestampColor"
+        android:textIsSelectable="false"
+        android:textStyle="bold"
+        android:clickable="false"
+        android:lines="1"/>
+
+</LinearLayout>
