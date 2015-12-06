@@ -34,7 +34,8 @@
             android:src="@mipmap/ic_launcher"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"
-            android:id="@+id/new_emoticon"/>
+            android:id="@+id/new_emoticon"
+            android:contentDescription="New Emoticon" />
 
         <EditText
             android:layout_width="0dp"
@@ -48,6 +49,7 @@
             android:layout_marginStart="@dimen/chat_new_text_margin"
             android:layout_marginRight="@dimen/chat_new_text_margin"
             android:layout_marginEnd="@dimen/chat_new_text_margin"
+            android:id="@+id/new_text"
             />
 
         <FrameLayout
@@ -63,14 +65,16 @@
             android:layout_height="match_parent"
             android:scaleType="centerCrop"
             android:src="@mipmap/ic_launcher"
-            android:id="@+id/send"/>
+            android:id="@+id/send"
+            android:contentDescription="Send" />
 
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
                 android:src="@mipmap/ic_launcher"
-                android:id="@+id/capture_audio"/>
+                android:id="@+id/capture_audio"
+                android:contentDescription="Capture Audio" />
 
         </FrameLayout>
 

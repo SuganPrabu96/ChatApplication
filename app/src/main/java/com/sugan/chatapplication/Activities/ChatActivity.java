@@ -3,26 +3,37 @@ package com.sugan.chatapplication.Activities;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 
 import com.sugan.chatapplication.ChatActivity.ChatsItem;
 import com.sugan.chatapplication.ChatActivity.ChatsRecyclerAdapter;
+import com.sugan.chatapplication.DataStorage.FileStorage.ExternalStorage.PublicStorage;
 import com.sugan.chatapplication.R;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.File;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 public class ChatActivity extends AppCompatActivity {
 
@@ -30,7 +41,6 @@ public class ChatActivity extends AppCompatActivity {
 
     ImageView newEmoticonIV, sendIV, attachIV;
     EditText message;
-    static boolean captureAudio = false;
     MediaRecorder recorder;
 
     RecyclerView recyclerView;
@@ -48,6 +58,19 @@ public class ChatActivity extends AppCompatActivity {
         newEmoticonIV = (ImageView) findViewById(R.id.new_emoticon);
         sendIV = (ImageView) findViewById(R.id.send);
         attachIV = (ImageView) findViewById(R.id.capture_audio);
+        message = (EditText) findViewById(R.id.new_text);
+
+        recyclerView = (RecyclerView) findViewById(R.id.chats_recyclerview);
+        recyclerView.setHasFixedSize(false);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
+
+        adapter = new ChatsRecyclerAdapter(chatsList, getApplicationContext());
+
+        recyclerView.setAdapter(adapter);
+
+        sendIV.setVisibility(View.GONE);
+        attachIV.setVisibility(View.VISIBLE);
 
         message.addTextChangedListener(new TextWatcher() {
             @Override
@@ -62,11 +85,10 @@ public class ChatActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable editable) {
-                if(editable.toString().equals("")){
+                if (editable.toString().equals("")) {
                     sendIV.setVisibility(View.GONE);
                     attachIV.setVisibility(View.VISIBLE);
-                }
-                else{
+                } else {
                     attachIV.setVisibility(View.GONE);
                     sendIV.setVisibility(View.VISIBLE);
                 }
@@ -82,19 +104,41 @@ public class ChatActivity extends AppCompatActivity {
 
         //TODO : Display a popup and ask for image/video/audio etc
 
-        attachIV.setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                int action = keyEvent.getAction();
-                if(action == KeyEvent.ACTION_DOWN)
-                    try {
+        attachIV.setOnTouchListener(new View.OnTouchListener() {
 
-                        startRecordingAudio("");
+            long time;
+            File file;
+            String filePath = "";
+
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                int action = motionEvent.getAction();
+                if (action == MotionEvent.ACTION_DOWN) {
+                    try {
+                        JSONObject temp = new JSONObject();
+                        time = System.currentTimeMillis();
+                        temp.put("name", String.valueOf(time));
+                        temp.put("type", "Audio");
+                        file = PublicStorage.getFileStorageDir(temp);
+                        filePath = file.getAbsolutePath();
+                        startRecordingAudio(filePath);
+                    } catch (IOException | JSONException | NullPointerException e) {
+                        e.printStackTrace();
+                    }
+                    return true;
+                }
+                else if (action == MotionEvent.ACTION_UP) {
+                    stopRecordingAudio();
+
+                    // Upload the file
+
+                    try {
+                        playAudio(filePath);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                else if(action == KeyEvent.ACTION_UP)
-                    stopRecordingAudio();
+                    return false;
+                }
                 return false;
             }
         });
@@ -115,7 +159,7 @@ public class ChatActivity extends AppCompatActivity {
 
         recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        recorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_WB);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
         recorder.setOutputFile(filePath);
         Log.d(LOG_TAG, "Starting to record");
 
@@ -127,6 +171,7 @@ public class ChatActivity extends AppCompatActivity {
     void stopRecordingAudio(){
 
         recorder.stop();
+        recorder.reset();
         recorder.release();
         recorder = null;
 
@@ -138,6 +183,24 @@ public class ChatActivity extends AppCompatActivity {
 
         MediaPlayer player = new MediaPlayer();
         player.setDataSource(filePath);
+        player.prepare();
+        player.start();
+
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                mediaPlayer.reset();
+                mediaPlayer.release();
+            }
+        });
+
+        player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+                Log.d(LOG_TAG,"Error playing media");
+                return false;
+            }
+        });
 
     }
 
@@ -152,14 +215,15 @@ public class ChatActivity extends AppCompatActivity {
     public void onStop() {
         super.onStop();
         Log.d(LOG_TAG, "onStop");
-
-        try{
-            recorder.stop();
-            recorder.release();
-            recorder = null;
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        if(recorder!=null)
+            try{
+                recorder.stop();
+                recorder.release();
+                recorder = null;
+                Log.d(LOG_TAG, "Stopped recording");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
 
     }
 
@@ -168,13 +232,15 @@ public class ChatActivity extends AppCompatActivity {
         super.onPause();
         Log.d(LOG_TAG, "onPause");
 
-        try{
-            recorder.stop();
-            recorder.release();
-            recorder = null;
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        if(recorder!=null)
+            try{
+                recorder.stop();
+                recorder.release();
+                recorder = null;
+                Log.d(LOG_TAG, "Stopped recording");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
     }
 
     @Override
@@ -187,14 +253,15 @@ public class ChatActivity extends AppCompatActivity {
     public void onDestroy(){
         super.onDestroy();
         Log.d(LOG_TAG, "onDestroy");
-
-        try{
-            recorder.stop();
-            recorder.release();
-            recorder = null;
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        if(recorder!=null)
+            try{
+                recorder.stop();
+                recorder.release();
+                recorder = null;
+                Log.d(LOG_TAG, "Stopped recording");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
     }
 
     @Override

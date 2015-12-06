@@ -18,6 +18,7 @@ package com.sugan.chatapplication.util.ViewPagerSlidingTabs;
 
 import android.content.Context;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.AttributeSet;
@@ -31,7 +32,8 @@ import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.app.docbizz.doctors.R;
+import com.sugan.chatapplication.R;
+
 
 /**
  * To be used with ViewPager to provide a tab indicator component which give constant feedback as to
@@ -155,7 +157,7 @@ public class SlidingTabLayout extends HorizontalScrollView {
 
         mViewPager = viewPager;
         if (viewPager != null) {
-            viewPager.setOnPageChangeListener(new InternalViewPagerListener());
+            viewPager.addOnPageChangeListener(new InternalViewPagerListener());
             populateTabStrip();
             mTabStrip.setTabTitlesTextColor(viewPager.getCurrentItem());
         }
@@ -214,7 +216,10 @@ public class SlidingTabLayout extends HorizontalScrollView {
             }
 
             tabTitleView.setText(adapter.getPageTitle(i));
-            tabTitleView.setTextColor(getResources().getColorStateList(R.color.selector));
+            if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M)
+                tabTitleView.setTextColor(getContext().getColorStateList(R.color.slidingTabSelectedItemColor));
+            else
+                tabTitleView.setTextColor(getResources().getColorStateList(R.color.slidingTabSelectedItemColor));
             tabView.setOnClickListener(tabClickListener);
             String desc = mContentDescriptions.get(i, null);
             if (desc != null) {
