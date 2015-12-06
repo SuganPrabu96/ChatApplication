@@ -28,8 +28,8 @@
         android:id="@+id/new_chat_layout">
 
         <ImageView
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:scaleType="centerCrop"
             android:src="@mipmap/ic_launcher"
             android:layout_alignParentLeft="true"
@@ -53,8 +53,8 @@
             />
 
         <FrameLayout
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:id="@+id/take_action"
             android:layout_alignParentRight="true"
             android:layout_alignParentEnd="true"
