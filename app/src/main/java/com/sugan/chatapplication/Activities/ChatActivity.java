@@ -23,6 +23,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.sugan.chatapplication.ChatActivity.ChatsItem;
 import com.sugan.chatapplication.ChatActivity.ChatsRecyclerAdapter;
@@ -369,14 +370,20 @@ public class ChatActivity extends AppCompatActivity{
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             ChatActivity target = mTarget.get();
-            if (target != null)
-                if(msg.what==1){
+            if (target != null) {
+                if (msg.what == 1) {
                     Bundle bundle = msg.getData();
                     ArrayList<String> matches = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                    Log.d(LOG_TAG+" : Matches", matches.toString());
+                    Log.d(LOG_TAG + " : Matches", matches.toString());
                     String bestMatch = matches.get(0);
-                    target.message.setText(bestMatch);
+                    target.message.append(bestMatch);
                 }
+                else if(msg.what == 0){
+                    Bundle bundle = msg.getData();
+                    String error = bundle.getString("error");
+                    Toast.makeText(target.getApplicationContext(),error,Toast.LENGTH_SHORT).show();
+                }
+            }
         }
 
     }

@@ -102,6 +102,12 @@ public class SpeechToText {
                     mError = "Insufficient Permissions";
                     break;
             }
+            Message msg = new Message();
+            msg.what = 0;
+            Bundle bundle = new Bundle();
+            bundle.putString("error", mError);
+            msg.setData(bundle);
+            ChatActivity.speechToTextHandler.sendMessage(msg);
             Log.d(LOG_TAG,mError);
         }
 
@@ -117,6 +123,10 @@ public class SpeechToText {
         @Override
         public void onPartialResults(Bundle bundle) {
             Log.d(LOG_TAG, "onPartialResults");
+            Message msg = new Message();
+            msg.what = 1;
+            msg.setData(bundle);
+            ChatActivity.speechToTextHandler.sendMessage(msg);
         }
 
         @Override
