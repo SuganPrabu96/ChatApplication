@@ -76,6 +76,38 @@
                 android:id="@+id/capture_audio"
                 android:contentDescription="Capture Audio" />
 
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher"
+                android:id="@+id/capture_photo"
+                android:contentDescription="Capture Photo" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher"
+                android:id="@+id/capture_video"
+                android:contentDescription="Capture Video" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher"
+                android:id="@+id/capture_location"
+                android:contentDescription="Capture Location" />
+
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@mipmap/ic_launcher"
+                android:id="@+id/speech_to_text"
+                android:contentDescription="Speech TO Text" />
+
         </FrameLayout>
 
     </RelativeLayout>

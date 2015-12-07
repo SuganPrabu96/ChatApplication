@@ -1,11 +1,15 @@
 package com.sugan.chatapplication.Activities;
 
+import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.speech.RecognitionListener;
+import android.speech.SpeechRecognizer;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -23,7 +27,10 @@ import android.widget.ImageView;
 import com.sugan.chatapplication.ChatActivity.ChatsItem;
 import com.sugan.chatapplication.ChatActivity.ChatsRecyclerAdapter;
 import com.sugan.chatapplication.DataStorage.FileStorage.ExternalStorage.PublicStorage;
+import com.sugan.chatapplication.MediaAccess.Audio;
+import com.sugan.chatapplication.MediaAccess.SpeechToText;
 import com.sugan.chatapplication.R;
+import com.sugan.chatapplication.util.SharedPrefsAccess;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -35,18 +42,35 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-public class ChatActivity extends AppCompatActivity {
+public class ChatActivity extends AppCompatActivity{
 
+    // Static final variables
     static final String LOG_TAG = "ChatActivity";
+    static final int SHORTCUT_PREF_AUDIO = 1;
+    static final int SHORTCUT_PREF_PHOTO = 2;
+    static final int SHORTCUT_PREF_VIDEO = 3;
+    static final int SHORTCUT_PREF_LOCATION = 4;
+    static final int SHORTCUT_PREF_SPEECH_TO_TEXT = 5;
 
-    ImageView newEmoticonIV, sendIV, attachIV;
+    // Views
+    ImageView newEmoticonIV, sendIV, captureAudioIV, captureVideoIV, capturePhotoIV, captureLocationIV, speechToTextIV;
     EditText message;
-    MediaRecorder recorder;
-
     RecyclerView recyclerView;
+
+    // Adapters
     ChatsRecyclerAdapter adapter;
 
+    // Static complex variables
     static ArrayList<ChatsItem> chatsList;
+    public static Handler speechToTextHandler;
+
+    // Media variables
+    MediaRecorder recorder;
+    SpeechRecognizer speechRecognizer;
+
+    // Shared preferences variables
+    int shortcutPref = -1;
+    JSONObject preferencesObj;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +81,11 @@ public class ChatActivity extends AppCompatActivity {
 
         newEmoticonIV = (ImageView) findViewById(R.id.new_emoticon);
         sendIV = (ImageView) findViewById(R.id.send);
-        attachIV = (ImageView) findViewById(R.id.capture_audio);
+        captureAudioIV = (ImageView) findViewById(R.id.capture_audio);
+        capturePhotoIV = (ImageView) findViewById(R.id.capture_photo);
+        captureVideoIV = (ImageView) findViewById(R.id.capture_video);
+        captureLocationIV = (ImageView) findViewById(R.id.capture_location);
+        speechToTextIV = (ImageView) findViewById(R.id.speech_to_text);
         message = (EditText) findViewById(R.id.new_text);
 
         recyclerView = (RecyclerView) findViewById(R.id.chats_recyclerview);
@@ -66,11 +94,39 @@ public class ChatActivity extends AppCompatActivity {
         recyclerView.setItemAnimator(new DefaultItemAnimator());
 
         adapter = new ChatsRecyclerAdapter(chatsList, getApplicationContext());
-
         recyclerView.setAdapter(adapter);
 
+        speechToTextHandler = new SpeechToTextHandlerClass(this);
+
+        try {
+            preferencesObj = new JSONObject(SharedPrefsAccess.retrieveData(getApplicationContext(),"Preferences"));
+            shortcutPref = preferencesObj.getInt("shortcutFunction");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         sendIV.setVisibility(View.GONE);
-        attachIV.setVisibility(View.VISIBLE);
+        switch (shortcutPref){
+            case SHORTCUT_PREF_AUDIO :
+                captureAudioIV.setVisibility(View.VISIBLE);
+                break;
+            case SHORTCUT_PREF_VIDEO :
+                captureVideoIV.setVisibility(View.VISIBLE);
+                break;
+            case SHORTCUT_PREF_PHOTO :
+                capturePhotoIV.setVisibility(View.VISIBLE);
+                break;
+            case SHORTCUT_PREF_LOCATION :
+                captureLocationIV.setVisibility(View.VISIBLE);
+                break;
+            case SHORTCUT_PREF_SPEECH_TO_TEXT :
+                speechToTextIV.setVisibility(View.VISIBLE);
+                break;
+            default :
+                captureAudioIV.setVisibility(View.VISIBLE);
+                break;
+        }
+        speechToTextIV.setVisibility(View.VISIBLE);
 
         message.addTextChangedListener(new TextWatcher() {
             @Override
@@ -87,9 +143,33 @@ public class ChatActivity extends AppCompatActivity {
             public void afterTextChanged(Editable editable) {
                 if (editable.toString().equals("")) {
                     sendIV.setVisibility(View.GONE);
-                    attachIV.setVisibility(View.VISIBLE);
+                    switch (shortcutPref){
+                        case SHORTCUT_PREF_AUDIO :
+                            captureAudioIV.setVisibility(View.VISIBLE);
+                            break;
+                        case SHORTCUT_PREF_VIDEO :
+                            captureVideoIV.setVisibility(View.VISIBLE);
+                            break;
+                        case SHORTCUT_PREF_PHOTO :
+                            capturePhotoIV.setVisibility(View.VISIBLE);
+                            break;
+                        case SHORTCUT_PREF_LOCATION :
+                            captureLocationIV.setVisibility(View.VISIBLE);
+                            break;
+                        case SHORTCUT_PREF_SPEECH_TO_TEXT :
+                            speechToTextIV.setVisibility(View.VISIBLE);
+                            break;
+                        default :
+                            captureAudioIV.setVisibility(View.VISIBLE);
+                            break;
+                    }
+                    speechToTextIV.setVisibility(View.VISIBLE);
                 } else {
-                    attachIV.setVisibility(View.GONE);
+                    captureAudioIV.setVisibility(View.GONE);
+                    capturePhotoIV.setVisibility(View.GONE);
+                    captureVideoIV.setVisibility(View.GONE);
+                    captureLocationIV.setVisibility(View.GONE);
+                    speechToTextIV.setVisibility(View.GONE);
                     sendIV.setVisibility(View.VISIBLE);
                 }
             }
@@ -102,9 +182,7 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
-        //TODO : Display a popup and ask for image/video/audio etc
-
-        attachIV.setOnTouchListener(new View.OnTouchListener() {
+        captureAudioIV.setOnTouchListener(new View.OnTouchListener() {
 
             long time;
             File file;
@@ -121,19 +199,18 @@ public class ChatActivity extends AppCompatActivity {
                         temp.put("type", "Audio");
                         file = PublicStorage.getFileStorageDir(temp);
                         filePath = file.getAbsolutePath();
-                        startRecordingAudio(filePath);
+                        Audio.startRecordingAudio(recorder, filePath);
                     } catch (IOException | JSONException | NullPointerException e) {
                         e.printStackTrace();
                     }
                     return true;
-                }
-                else if (action == MotionEvent.ACTION_UP) {
-                    stopRecordingAudio();
+                } else if (action == MotionEvent.ACTION_UP) {
+                    Audio.stopRecordingAudio(recorder);
 
                     // Upload the file
 
                     try {
-                        playAudio(filePath);
+                        Audio.playAudio(filePath);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -143,64 +220,23 @@ public class ChatActivity extends AppCompatActivity {
             }
         });
 
-        //TODO : Decide DB model
-        //TODO : Load data from DB here.
-
-    }
-
-    void startRecordingAudio(String filePath) throws IOException {
-
-        recorder = new MediaRecorder();
-
-        final int MAX_DURATION = 300000; // 5 minutes
-
-        recorder.setAudioChannels(2);
-        recorder.setMaxDuration(MAX_DURATION);
-
-        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-        recorder.setOutputFile(filePath);
-        Log.d(LOG_TAG, "Starting to record");
-
-        recorder.prepare();
-        recorder.start();
-
-    }
-
-    void stopRecordingAudio(){
-
-        recorder.stop();
-        recorder.reset();
-        recorder.release();
-        recorder = null;
-
-        Log.d(LOG_TAG, "Stopped recording");
-
-    }
-
-    void playAudio(String filePath) throws IOException {
-
-        MediaPlayer player = new MediaPlayer();
-        player.setDataSource(filePath);
-        player.prepare();
-        player.start();
-
-        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+        speechToTextIV.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public void onCompletion(MediaPlayer mediaPlayer) {
-                mediaPlayer.reset();
-                mediaPlayer.release();
-            }
-        });
-
-        player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
-            @Override
-            public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
-                Log.d(LOG_TAG,"Error playing media");
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                int action = motionEvent.getAction();
+                if (action == MotionEvent.ACTION_DOWN) {
+                    SpeechToText.startCapturingSpeech(getApplicationContext(), speechRecognizer);
+                    return true;
+                } else if (action == MotionEvent.ACTION_UP) {
+                    SpeechToText.stopCapturingSpeech(speechRecognizer);
+                    return false;
+                }
                 return false;
             }
         });
+
+        //TODO : Decide DB model
+        //TODO : Load data from DB here.
 
     }
 
@@ -217,14 +253,17 @@ public class ChatActivity extends AppCompatActivity {
         Log.d(LOG_TAG, "onStop");
         if(recorder!=null)
             try{
-                recorder.stop();
-                recorder.release();
-                recorder = null;
+                Audio.stopRecordingAudio(recorder);
                 Log.d(LOG_TAG, "Stopped recording");
             }catch (Exception e){
                 e.printStackTrace();
             }
-
+        if(speechRecognizer!=null)
+            try{
+                SpeechToText.stopCapturingSpeech(speechRecognizer);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
     }
 
     @Override
@@ -234,10 +273,14 @@ public class ChatActivity extends AppCompatActivity {
 
         if(recorder!=null)
             try{
-                recorder.stop();
-                recorder.release();
-                recorder = null;
+                Audio.stopRecordingAudio(recorder);
                 Log.d(LOG_TAG, "Stopped recording");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        if(speechRecognizer!=null)
+            try{
+                SpeechToText.stopCapturingSpeech(speechRecognizer);
             }catch (Exception e){
                 e.printStackTrace();
             }
@@ -255,10 +298,14 @@ public class ChatActivity extends AppCompatActivity {
         Log.d(LOG_TAG, "onDestroy");
         if(recorder!=null)
             try{
-                recorder.stop();
-                recorder.release();
-                recorder = null;
+                Audio.stopRecordingAudio(recorder);
                 Log.d(LOG_TAG, "Stopped recording");
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+        if(speechRecognizer!=null)
+            try{
+                SpeechToText.stopCapturingSpeech(speechRecognizer);
             }catch (Exception e){
                 e.printStackTrace();
             }
@@ -276,7 +323,7 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState){
+    public void onRestoreInstanceState(@NonNull Bundle savedInstanceState){
 
         //Fired only when the bundle is not null
 
@@ -286,11 +333,11 @@ public class ChatActivity extends AppCompatActivity {
 
     }
 
-    private static class HandlerClass extends Handler {
+    private static class SetAdapterHandlerClass extends Handler {
 
         private final WeakReference<ChatActivity> mTarget;
 
-        public HandlerClass(ChatActivity context)
+        public SetAdapterHandlerClass(ChatActivity context)
         {
             mTarget = new WeakReference<>(context);
         }
@@ -304,6 +351,31 @@ public class ChatActivity extends AppCompatActivity {
                     ChatActivity activity = mTarget.get();
                     activity.adapter = new ChatsRecyclerAdapter(chatsList, activity.getApplicationContext());
                     activity.recyclerView.setAdapter(activity.adapter);
+                }
+        }
+
+    }
+
+    private static class SpeechToTextHandlerClass extends Handler {
+
+        private final WeakReference<ChatActivity> mTarget;
+
+        public SpeechToTextHandlerClass(ChatActivity context)
+        {
+            mTarget = new WeakReference<>(context);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            ChatActivity target = mTarget.get();
+            if (target != null)
+                if(msg.what==1){
+                    Bundle bundle = msg.getData();
+                    ArrayList<String> matches = bundle.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    Log.d(LOG_TAG+" : Matches", matches.toString());
+                    String bestMatch = matches.get(0);
+                    target.message.setText(bestMatch);
                 }
         }
 

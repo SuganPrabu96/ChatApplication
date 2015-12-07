@@ -23,9 +23,7 @@ public class Audio {
     public static final int MONO = 1; // Single Audio Channel
     public static final int STEREO = 2; // Dual Audio Channel
 
-    static MediaRecorder recorder;
-
-    public static void startRecording(JSONObject details) throws JSONException, IOException {
+    public static void startRecordingAudio(MediaRecorder recorder, JSONObject details) throws JSONException, IOException {
 
         int audioChannels, maxDuration;
 
@@ -56,7 +54,7 @@ public class Audio {
 
     // Call this function in onPause(), onStop() and onDestroy() also
 
-    public static void stopRecording(){
+    public static void stopRecordingAudio(MediaRecorder recorder){
 
         recorder.stop();
         recorder.release();
@@ -68,9 +66,71 @@ public class Audio {
 
         String filePath = details.getString("filePath");
 
-        MediaPlayer mediaPlayer = new MediaPlayer();
+        MediaPlayer player = new MediaPlayer();
+        player.setDataSource(filePath);
+        player.prepare();
+        player.start();
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                mediaPlayer.reset();
+                mediaPlayer.release();
+            }
+        });
+        player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+                Log.d(LOG_TAG, "Error playing media");
+                return false;
+            }
+        });
 
-        mediaPlayer.setDataSource(filePath);
+    }
+
+    // Following methods use default params
+
+    public static void startRecordingAudio(MediaRecorder recorder, String filePath) throws IOException {
+
+        recorder = new MediaRecorder();
+
+        final int MAX_DURATION = 300000; // 5 minutes
+
+        recorder.setAudioChannels(2);
+        recorder.setMaxDuration(MAX_DURATION);
+
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+        recorder.setOutputFile(filePath);
+        Log.d(LOG_TAG, "Starting to record");
+
+        recorder.prepare();
+        recorder.start();
+
+    }
+
+    public static void playAudio(String filePath) throws IOException {
+
+        MediaPlayer player = new MediaPlayer();
+        player.setDataSource(filePath);
+        player.prepare();
+        player.start();
+
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                mediaPlayer.reset();
+                mediaPlayer.release();
+            }
+        });
+
+        player.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+                Log.d(LOG_TAG, "Error playing media");
+                return false;
+            }
+        });
 
     }
 
