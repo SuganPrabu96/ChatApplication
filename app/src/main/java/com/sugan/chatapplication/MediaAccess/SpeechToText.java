@@ -2,6 +2,7 @@ package com.sugan.chatapplication.MediaAccess;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Message;
 import android.speech.RecognitionListener;
@@ -20,7 +21,14 @@ public class SpeechToText {
 
     final static String LOG_TAG = "SpeechToText";
 
+    static AudioManager audioManager;
+    static int mStreamVolume = 0;
+
     public static void startCapturingSpeech(Context context, SpeechRecognizer speechRecognizer) {
+
+        audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        mStreamVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,0,0);
 
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context);
         speechRecognizer.setRecognitionListener(listener);
@@ -47,6 +55,7 @@ public class SpeechToText {
         @Override
         public void onReadyForSpeech(Bundle bundle) {
             Log.d(LOG_TAG, "onReadyForSpeech");
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,0,0);
         }
 
         @Override
@@ -108,7 +117,8 @@ public class SpeechToText {
             bundle.putString("error", mError);
             msg.setData(bundle);
             ChatActivity.speechToTextHandler.sendMessage(msg);
-            Log.d(LOG_TAG,mError);
+            Log.d(LOG_TAG, mError);
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, mStreamVolume, 0);
         }
 
         @Override
@@ -118,6 +128,7 @@ public class SpeechToText {
             msg.what = 1;
             msg.setData(bundle);
             ChatActivity.speechToTextHandler.sendMessage(msg);
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC,mStreamVolume,0);
         }
 
         @Override

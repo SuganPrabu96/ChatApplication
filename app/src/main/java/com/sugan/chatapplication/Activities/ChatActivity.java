@@ -1,6 +1,9 @@
 package com.sugan.chatapplication.Activities;
 
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -31,8 +34,10 @@ import com.sugan.chatapplication.DataStorage.FileStorage.ExternalStorage.PublicS
 import com.sugan.chatapplication.MediaAccess.Audio;
 import com.sugan.chatapplication.MediaAccess.SpeechToText;
 import com.sugan.chatapplication.R;
+import com.sugan.chatapplication.util.PushNotifications;
 import com.sugan.chatapplication.util.SharedPrefsAccess;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -377,6 +382,35 @@ public class ChatActivity extends AppCompatActivity{
                     Log.d(LOG_TAG + " : Matches", matches.toString());
                     String bestMatch = matches.get(0);
                     target.message.append(bestMatch);
+                    JSONObject details = new JSONObject();
+                    JSONObject notif = new JSONObject();
+                    JSONObject led = new JSONObject();
+                    JSONObject expandedLayout = new JSONObject();
+                    try {
+                        Log.d(LOG_TAG, "Pushing");
+                        notif.put("contentTitle", "Title");
+                        notif.put("contentText", bestMatch);
+                        led.put("isRequired", true);
+                        led.put("onTime",500);
+                        led.put("offTime",500);
+                        led.put("color", Color.BLUE);
+                        expandedLayout.put("isRequired",true);
+                        expandedLayout.put("bigContentTitle","Big Content Title");
+                        expandedLayout.put("summaryText","Received 4 new messages");
+                        JSONArray lines = new JSONArray();
+                        lines.put(0,"Sugan");
+                        lines.put(1,"Prabu");
+                        lines.put(2,"test");
+                        lines.put(3,"line");
+                        expandedLayout.put("lines",lines);
+                        details.put("notification",notif);
+                        details.put("led",led);
+                        details.put("expandedLayout",expandedLayout);
+                        Bitmap bitmap = BitmapFactory.decodeResource(target.getResources(),R.mipmap.ic_launcher);
+                        new PushNotifications(target.getApplicationContext()).pushANotification(1,details,bitmap);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
                 else if(msg.what == 0){
                     Bundle bundle = msg.getData();
